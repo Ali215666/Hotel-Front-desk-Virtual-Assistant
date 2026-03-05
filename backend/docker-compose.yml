@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hotel-ai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Add Ollama connection if needed
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    volumes:
+      # Mount for development hot-reload (optional)
+      - ./app:/app/app
+      - ../conversation:/app/conversation
+      - ../llm:/app/llm
+    restart: unless-stopped
+    networks:
+      - hotel-ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  hotel-ai-network:
+    driver: bridge
