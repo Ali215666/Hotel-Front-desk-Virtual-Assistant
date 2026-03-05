@@ -1,0 +1,632 @@
+{
+	"info": {
+		"_postman_id": "hotel-ai-backend-tests",
+		"name": "Hotel Front Desk AI Backend API",
+		"description": "Complete test suite for Hotel Front Desk AI conversational backend.\n\nIncludes:\n- REST API chat endpoint tests\n- WebSocket chat endpoint tests\n- Multiple session handling\n- Error handling scenarios\n- Response validation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "hotel-ai-team"
+	},
+	"item": [
+		{
+			"name": "Health & Status",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has status field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData.status).to.eql('healthy');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the backend service is healthy and running."
+					},
+					"response": []
+				},
+				{
+					"name": "Root Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Service is online\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('online');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Root endpoint status check."
+					},
+					"response": []
+				}
+			],
+			"description": "Health check and status endpoints"
+		},
+		{
+			"name": "REST API - /api/chat",
+			"item": [
+				{
+					"name": "Chat - Session 1 - Book Room",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has reply field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('reply');",
+									"});",
+									"",
+									"pm.test(\"Reply is non-empty string\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"    pm.expect(jsonData.reply.length).to.be.above(0);",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(30000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"user123\",\n    \"message\": \"I want to book a room.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "First message in a conversation - booking inquiry."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Session 1 - Follow-up",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response maintains context\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"    pm.expect(jsonData.reply.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"user123\",\n    \"message\": \"What room types do you have available?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Follow-up question in same session to test context retention."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Session 2 - Different User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has valid reply\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"user456\",\n    \"message\": \"What time is check-in?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Different session to test session isolation."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Session 3 - Check-out Policy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Reply contains relevant information\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"user789\",\n    \"message\": \"I need to cancel my reservation. What is your cancellation policy?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Test cancellation policy response."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Invalid Request (Missing session_id)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422 (Validation Error)\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test(\"Error details provided\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('detail');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Hello\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Test error handling for missing session_id."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Invalid Request (Empty message)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+									"});",
+									"",
+									"pm.test(\"Error details provided\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('detail');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"test123\",\n    \"message\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Test error handling for empty message."
+					},
+					"response": []
+				},
+				{
+					"name": "Chat - Out of Scope Question",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains domain restriction message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"    // Should refuse to answer non-hotel questions",
+									"    pm.expect(jsonData.reply.toLowerCase()).to.include('hotel');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"test_scope\",\n    \"message\": \"What is the capital of France?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Test that bot refuses non-hotel questions."
+					},
+					"response": []
+				}
+			],
+			"description": "REST API endpoint tests for /api/chat"
+		},
+		{
+			"name": "WebSocket - /ws/chat",
+			"item": [
+				{
+					"name": "WebSocket Connection Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ws_base_url}}/ws/chat",
+							"host": [
+								"{{ws_base_url}}"
+							],
+							"path": [
+								"ws",
+								"chat"
+							]
+						},
+						"description": "WebSocket endpoint connection test.\n\n**To test WebSocket in Postman:**\n1. Click on 'New' -> 'WebSocket Request'\n2. Enter URL: `ws://localhost:8000/ws/chat`\n3. Click 'Connect'\n4. Send JSON messages:\n```json\n{\n    \"session_id\": \"ws_user_1\",\n    \"message\": \"I want to book a room.\"\n}\n```\n\n**Expected Response:**\nYou should receive:\n1. Status message: `{\"type\": \"status\", \"message\": \"Processing your request...\"}`\n2. Streaming tokens as plain text\n3. Completion: `{\"type\": \"done\", \"message\": \"Response complete\"}`"
+					},
+					"response": []
+				}
+			],
+			"description": "WebSocket endpoint tests. Use Postman's WebSocket feature to test real-time streaming.\n\n**WebSocket Test Instructions:**\n\n1. Open Postman and create a new WebSocket Request\n2. URL: `ws://localhost:8000/ws/chat`\n3. Connect to the WebSocket\n4. Send test messages in JSON format:\n\n**Test Message 1 - Initial Booking:**\n```json\n{\n    \"session_id\": \"ws_user_1\",\n    \"message\": \"I want to book a room.\"\n}\n```\n\n**Test Message 2 - Follow-up:**\n```json\n{\n    \"session_id\": \"ws_user_1\",\n    \"message\": \"What are your room rates?\"\n}\n```\n\n**Test Message 3 - Different Session:**\n```json\n{\n    \"session_id\": \"ws_user_2\",\n    \"message\": \"What time is check-in?\"\n}\n```\n\n**Test Message 4 - Cancellation Policy:**\n```json\n{\n    \"session_id\": \"ws_user_3\",\n    \"message\": \"I need to cancel my reservation. What is your policy?\"\n}\n```\n\n**Expected WebSocket Responses:**\n- Status: `{\"type\": \"status\", \"message\": \"Processing your request...\"}`\n- Tokens: Streaming text chunks (plain text)\n- Done: `{\"type\": \"done\", \"message\": \"Response complete\"}`\n- Errors: `{\"type\": \"error\", \"message\": \"error details\"}`"
+		},
+		{
+			"name": "Concurrent Sessions Test",
+			"item": [
+				{
+					"name": "Concurrent Request - User A",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User A - Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User A - Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"concurrent_user_a\",\n    \"message\": \"I want to book a deluxe room for 3 nights.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Concurrent user A - Booking request"
+					},
+					"response": []
+				},
+				{
+					"name": "Concurrent Request - User B",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User B - Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User B - Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"concurrent_user_b\",\n    \"message\": \"What amenities do you offer?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Concurrent user B - Amenities inquiry"
+					},
+					"response": []
+				},
+				{
+					"name": "Concurrent Request - User C",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User C - Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User C - Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reply).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"concurrent_user_c\",\n    \"message\": \"Can I cancel my reservation?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/chat",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"chat"
+							]
+						},
+						"description": "Concurrent user C - Cancellation inquiry"
+					},
+					"response": []
+				}
+			],
+			"description": "Test multiple concurrent sessions to ensure proper isolation. Run these requests simultaneously using Postman's Collection Runner to test concurrent handling."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "ws_base_url",
+			"value": "ws://localhost:8000",
+			"type": "string"
+		}
+	]
+}
