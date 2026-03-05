@@ -319,50 +319,14 @@ expected HTTP status code, verifying the API is hardened against bad input.
 ## Known Limitations
 
 ### 1. Single-threaded LLM inference
-Ollama runs one request at a time on CPU. All concurrent requests queue behind  
-each other, causing latency to grow linearly with the number of simultaneous  
-users. A production system would require GPU acceleration or a larger server.
+Ollama currently serves one request at a time on CPU, so latency increases
+noticeably under concurrent usage.
 
 ### 2. In-memory session storage
-`MemoryManager` stores all conversation history in a Python dict. All sessions  
-are **lost on backend restart**. There is no persistent database, so resuming  
-sessions after a server reboot is not possible.
+Conversation history is stored in process memory (`MemoryManager`), so all
+sessions are lost when the backend restarts.
 
-### 3. Context window limited to 6 turns
-To keep prompts within `num_ctx 4096`, only the last 6 dialogue turns  
-(12 messages) are included in each prompt. Anything earlier is silently dropped —  
-the model has no memory beyond that window.
-
-### 4. Domain restriction is prompt-only
-The hotel-only restriction is enforced entirely through the system prompt.  
-A sufficiently creative prompt injection or jailbreak attempt could bypass it.  
-There is no secondary classifier or guardrail layer.
-
-### 5. No authentication or session ownership
-Any client can pass any `session_id` and read or write to that session. There  
-is no user authentication, so sessions are not isolated between real users.
-
-### 6. Cold-start latency
-The first query after Ollama starts loads the model into RAM, taking 15–30 s.  
-There is no warm-up ping on backend startup; the first real user request bears  
-this cost.
-
-### 7. Response length cap
-`num_predict 200` limits every response to roughly 200 tokens (~150 words).  
-Longer explanations (detailed itineraries, multi-step instructions) will be  
-truncated mid-sentence.
-
-### 8. No streaming in REST fallback
-The `/api/chat` REST endpoint returns the complete response in one HTTP reply.  
-Only the WebSocket endpoint (`/ws/chat`) provides token-by-token streaming,  
-so the REST path feels less responsive for long answers.
-
-### 9. CORS open to all origins
-`allow_origins=["*"]` is set for development convenience. This must be  
-restricted to the actual frontend origin in any production deployment.
-
-### 10. No rate limiting
-The API has no rate-limiter. A single client can flood the backend with  
-requests, starving other sessions. This would need a middleware layer  
-(e.g., `slowapi`) before going to production.
+### 3. No authentication or session ownership
+The API does not yet enforce user authentication, which means `session_id`
+values are not tied to verified users.
 
